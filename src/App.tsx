@@ -258,31 +258,6 @@ export default function App() {
               totalCredits={stats.totalCredits}
             />
 
-            {/* Conflict Banner if any active clash exists */}
-            {currentActiveConflicts.length > 0 && (
-              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 text-rose-900 dark:text-rose-200 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-                  <div className="text-xs">
-                    <span className="font-bold">Schedule Overlap Detected:</span>{' '}
-                    {currentActiveConflicts[0].existingSection.courseCode} clashes with{' '}
-                    {currentActiveConflicts[0].conflictingSection.courseCode} on{' '}
-                    {currentActiveConflicts[0].day}. Change one of their sections to resolve.
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    const firstClash = currentActiveConflicts[0];
-                    setExpandedCourseCode(firstClash.conflictingSection.courseCode);
-                    selectedPanelRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-semibold text-xs whitespace-nowrap"
-                >
-                  Resolve Clash
-                </button>
-              </div>
-            )}
-
             {/* Modern Two-Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Side: Course Selection & Explorer (7 cols) */}
@@ -296,6 +271,7 @@ export default function App() {
                     expandedCourseCode={expandedCourseCode}
                     onToggleCourse={handleToggleCourse}
                     onSelectSection={handleSelectSection}
+                    onDeselectSection={handleRemoveSectionFromCalendar}
                     onRemoveCourse={handleRemoveCourse}
                     onBrowseCoursesClick={() => {
                       const el = document.getElementById('course-explorer-section');
@@ -428,6 +404,7 @@ export default function App() {
               allSections={allSections}
               selectedSections={selectedSections}
               onSelectSection={handleSelectSection}
+              onDeselectSection={handleRemoveSectionFromCalendar}
               onNavigateToCourse={handleNavigateToCourse}
             />
           </div>

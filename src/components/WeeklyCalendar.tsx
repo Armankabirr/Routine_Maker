@@ -1,7 +1,17 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { SectionItem, ScheduleConflict } from '../types/routine';
 import { DAYS_OF_WEEK, STANDARD_THEORY_SLOTS, getCoursePalette } from '../utils/routineUtils';
-import { Trash2, AlertTriangle, MapPin, User, Clock } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  Trash2,
+  AlertTriangle,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface WeeklyCalendarProps {
   selectedSections: SectionItem[];
@@ -22,18 +32,22 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   id = 'weekly-calendar-view',
   isExportView = false
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [highlightConflictsOnly, setHighlightConflictsOnly] = useState(false);
+  const [activeMobileDay, setActiveMobileDay] = useState<'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday'>('Saturday');
 
-  // Minute range: 08:30 AM (510 min) to 04:30 PM (990 min) = 480 minutes total
+  // Total credits and stats
+  const totalCredits = selectedSections.reduce((acc, s) => acc + s.credit, 0);
+  const courseCount = selectedSections.length;
+
+  // Minute range for compact calculation: 8:30 AM (510 min) to 4:30 PM (990 min) = 480 min total
   const START_MINUTES = 510;
   const END_MINUTES = 990;
   const TOTAL_MINUTES = END_MINUTES - START_MINUTES;
 
-  // Flatten all scheduled slots from selected sections
+  // Flatten events
   const scheduledEvents = selectedSections.flatMap(sec =>
     sec.schedules.map(slot => {
-      // Check if this slot conflicts with any other
-      const hasConflict = conflicts.some(
+      const isConflicted = conflicts.some(
         c =>
           (c.existingSection.id === sec.id || c.conflictingSection.id === sec.id) &&
           c.day === slot.day
@@ -42,207 +56,336 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       return {
         section: sec,
         slot,
-        hasConflict
+        isConflicted
       };
     })
   );
 
+  const activeDays = DAYS_OF_WEEK.filter(day =>
+    scheduledEvents.some(e => e.slot.day === day)
+  );
+  const freeDaysCount = 5 - activeDays.length;
+
   return (
     <div
       id={id}
-      ref={containerRef}
-      className={`w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col ${
+      className={`w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col transition-all ${
         isExportView ? 'p-6 bg-white text-slate-900' : ''
       }`}
     >
-      {/* Calendar Header with Days */}
-      <div className="grid grid-cols-[70px_repeat(5,1fr)] border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/50 sticky top-0 z-20 backdrop-blur-xs">
-        <div className="py-3 px-2 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-          Time
-        </div>
-        {DAYS_OF_WEEK.map(day => {
-          const countForDay = scheduledEvents.filter(e => e.slot.day === day).length;
-          return (
-            <div
-              key={day}
-              className="py-3 px-2 border-l border-slate-200 dark:border-slate-800 text-center"
-            >
-              <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                {day}
-              </div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                {countForDay === 0 ? 'Free day' : `${countForDay} class${countForDay > 1 ? 'es' : ''}`}
+      {/* 1. Modern Card Header */}
+      <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/70 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+              <CalendarIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
+                My Weekly Routine
+              </h3>
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {totalCredits} Credits
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>{courseCount} Course{courseCount !== 1 ? 's' : ''}</span>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Main Timetable Body with proportional time slots */}
-      <div className="relative min-w-[700px] sm:min-w-0">
-        <div className="grid grid-cols-[70px_repeat(5,1fr)] relative min-h-[640px]">
-          {/* Friendly Overlay if no sections selected yet */}
-          {selectedSections.length === 0 && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs text-center space-y-3">
-              <div className="w-16 h-16 rounded-3xl bg-orange-100/80 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center text-3xl shadow-sm">
-                📚
-              </div>
-              <div className="max-w-xs space-y-1">
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                  Start building your Fall 2026 routine
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Search or browse courses on the left and add them to your planner. Selected sections will appear here in real-time.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Time Gutter Column */}
-          <div className="flex flex-col justify-between py-2 border-r border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 select-none">
-            {STANDARD_THEORY_SLOTS.map(slot => (
-              <div
-                key={slot.label}
-                className="px-1 text-center"
-                style={{
-                  height: `${((slot.endMinutes - slot.startMinutes) / TOTAL_MINUTES) * 100}%`
-                }}
-              >
-                <span className="text-[10px] sm:text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400 font-medium leading-tight block">
-                  {slot.label.split(' - ')[0]}
-                </span>
-                <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 block">
-                  to {slot.label.split(' - ')[1]}
-                </span>
-              </div>
-            ))}
           </div>
 
-          {/* 5 Day Columns */}
-          {DAYS_OF_WEEK.map(day => {
-            const dayEvents = scheduledEvents.filter(e => e.slot.day === day);
-
-            return (
-              <div
-                key={day}
-                className="relative border-r last:border-r-0 border-slate-200 dark:border-slate-800 h-full min-h-[640px] bg-white dark:bg-slate-900/60"
+          {/* Conflict Status Pill */}
+          <div className="flex items-center gap-2">
+            {conflicts.length === 0 ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>No Conflicts</span>
+              </span>
+            ) : (
+              <button
+                onClick={() => setHighlightConflictsOnly(!highlightConflictsOnly)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/80 hover:bg-rose-100 transition-colors cursor-pointer"
+                title="Click to toggle conflict highlight"
               >
-                {/* Horizontal reference grid lines */}
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                <span>
+                  {conflicts.length} Conflict{conflicts.length > 1 ? 's' : ''}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Empty State (Clean & friendly if no sections chosen) */}
+      {selectedSections.length === 0 ? (
+        <div className="p-10 sm:p-14 text-center flex flex-col items-center justify-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center text-2xl shadow-inner">
+            📅
+          </div>
+          <div className="max-w-xs space-y-1">
+            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+              Your timetable is empty
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Select a course section on the left to preview your weekly routine.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Day Card View (sm:hidden) */}
+          <div className="block sm:hidden p-3 border-b border-slate-100 dark:border-slate-800">
+            {/* Day Selector Tabs */}
+            <div className="flex items-center justify-between gap-1 pb-3">
+              {DAYS_OF_WEEK.map(day => {
+                const count = scheduledEvents.filter(e => e.slot.day === day).length;
+                const isActive = activeMobileDay === day;
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setActiveMobileDay(day)}
+                    className={`flex-1 py-1.5 px-1 rounded-lg text-[11px] font-semibold text-center transition-all ${
+                      isActive
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <div>{day.slice(0, 3)}</div>
+                    <div className="text-[9px] opacity-75">{count}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mobile Day Events List */}
+            <div className="space-y-2 min-h-[160px]">
+              {scheduledEvents.filter(e => e.slot.day === activeMobileDay).length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 italic">
+                  No classes scheduled on {activeMobileDay}
+                </div>
+              ) : (
+                scheduledEvents
+                  .filter(e => e.slot.day === activeMobileDay)
+                  .sort((a, b) => a.slot.startMinutes - b.slot.startMinutes)
+                  .map((evt, idx) => {
+                    const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
+
+                    return (
+                      <motion.div
+                        key={`${evt.section.id}-${idx}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${
+                          evt.isConflicted
+                            ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-900 dark:text-rose-200'
+                            : `${palette.bg} ${palette.border} ${palette.text}`
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold font-mono">{evt.section.courseCode}</span>
+                            <span className="font-semibold text-[10px] px-1 py-0.2 rounded-xs bg-slate-900/10 dark:bg-white/10">
+                              Sec {evt.section.section}
+                            </span>
+                          </div>
+                          <div className="text-[11px] truncate opacity-90">{evt.section.courseTitle}</div>
+                          <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span>{evt.slot.time}</span>
+                            <span>·</span>
+                            <span>{evt.slot.room}</span>
+                            <span>·</span>
+                            <span>{evt.section.facultyInitial}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => onRemoveSection(evt.section.id)}
+                          className="p-1 text-slate-400 hover:text-rose-500 rounded-lg"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Compact Google Calendar-Style Grid (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
+            {/* Day Header Row */}
+            <div className="grid grid-cols-[55px_repeat(5,1fr)] border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/40 sticky top-0 z-10 text-center">
+              <div className="py-2 px-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                Time
+              </div>
+              {DAYS_OF_WEEK.map(day => {
+                const count = scheduledEvents.filter(e => e.slot.day === day).length;
+                return (
+                  <div
+                    key={day}
+                    className="py-2 px-1 border-l border-slate-200 dark:border-slate-800"
+                  >
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {day}
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono ml-1.5">
+                      ({count})
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Compact Timetable Body: 380px total height, zero wasted vertical space */}
+            <div className="grid grid-cols-[55px_repeat(5,1fr)] relative h-[380px]">
+              {/* Left Compact Time Column */}
+              <div className="relative border-r border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 select-none">
                 {STANDARD_THEORY_SLOTS.map((slot, index) => {
                   const topPercent = ((slot.startMinutes - START_MINUTES) / TOTAL_MINUTES) * 100;
                   return (
                     <div
                       key={index}
                       style={{ top: `${topPercent}%` }}
-                      className="absolute left-0 right-0 border-t border-dashed border-slate-100 dark:border-slate-800/80 pointer-events-none"
-                    />
-                  );
-                })}
-
-                {/* Empty State placeholder if no classes */}
-                {dayEvents.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-                    <span className="text-xs text-slate-400 italic">No classes</span>
-                  </div>
-                )}
-
-                {/* Render Classes on this day */}
-                {dayEvents.map((evt, idx) => {
-                  const startMin = Math.max(evt.slot.startMinutes, START_MINUTES);
-                  const endMin = Math.min(evt.slot.endMinutes, END_MINUTES);
-                  const topPercent = ((startMin - START_MINUTES) / TOTAL_MINUTES) * 100;
-                  const heightPercent = ((endMin - startMin) / TOTAL_MINUTES) * 100;
-
-                  const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
-
-                  return (
-                    <div
-                      key={`${evt.section.id}-${evt.slot.day}-${idx}`}
-                      style={{
-                        top: `${Math.max(0.5, topPercent)}%`,
-                        height: `${Math.max(6, heightPercent - 0.8)}%`,
-                        left: '4px',
-                        right: '4px'
-                      }}
-                      className={`absolute rounded-xl p-2 sm:p-2.5 transition-all text-xs flex flex-col justify-between overflow-hidden shadow-xs border ${
-                        evt.hasConflict
-                          ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-500 dark:border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/50'
-                          : `${palette.bg} ${palette.border} ${palette.text}`
-                      }`}
+                      className="absolute left-0 right-0 px-1 -translate-y-1/2 text-right"
                     >
-                      {/* Top Bar: Code, Section & Remove */}
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="truncate">
-                          <button
-                            onClick={() => onSelectCourse && onSelectCourse(evt.section.courseCode)}
-                            className="font-bold text-xs sm:text-sm hover:underline text-left block truncate tracking-tight"
-                            title={evt.section.courseTitle}
-                          >
-                            {evt.section.courseCode}
-                          </button>
-                          <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-90">
-                            <span className="font-semibold uppercase tracking-wider px-1 py-0.2 rounded-xs bg-slate-900/10 dark:bg-white/10">
-                              Sec {evt.section.section}
-                            </span>
-                            <span>·</span>
-                            <span>{evt.section.credit} Cr</span>
-                            {evt.section.isLab && (
-                              <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">
-                                Lab
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {!isExportView && (
-                          <button
-                            onClick={() => onRemoveSection(evt.section.id)}
-                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors"
-                            title={`Remove ${evt.section.courseCode} Section ${evt.section.section}`}
-                            aria-label={`Remove ${evt.section.courseCode}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Course Title snippet */}
-                      <div className="text-[11px] leading-tight line-clamp-1 opacity-90 my-1 font-medium">
-                        {evt.section.courseTitle}
-                      </div>
-
-                      {/* Bottom row: Faculty, Room, Time & Conflict Flag */}
-                      <div className="flex flex-col gap-0.5 mt-auto text-[10px] opacity-85 pt-1 border-t border-slate-300/40 dark:border-slate-700/50 font-mono">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="flex items-center gap-1 truncate" title={evt.section.facultyName}>
-                            <User className="w-2.5 h-2.5 shrink-0" />
-                            <span className="truncate">{evt.section.facultyInitial || evt.section.facultyName}</span>
-                          </span>
-                          <span className="flex items-center gap-1 shrink-0 font-bold">
-                            <MapPin className="w-2.5 h-2.5 shrink-0" />
-                            <span>{evt.slot.room}</span>
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-1 text-[9px]">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5 shrink-0" />
-                            <span>{evt.slot.time}</span>
-                          </span>
-                          {evt.hasConflict && (
-                            <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-bold">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>CLASH</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      <span className="text-[10px] font-mono tabular-nums text-slate-400 dark:text-slate-500 font-medium">
+                        {slot.label.split(' - ')[0]}
+                      </span>
                     </div>
                   );
                 })}
               </div>
-            );
-          })}
+
+              {/* 5 Day Columns */}
+              {DAYS_OF_WEEK.map(day => {
+                const dayEvents = scheduledEvents.filter(e => e.slot.day === day);
+
+                return (
+                  <div
+                    key={day}
+                    className="relative border-r last:border-r-0 border-slate-200 dark:border-slate-800 h-full bg-white dark:bg-slate-900/40"
+                  >
+                    {/* Subtle horizontal slot guidelines */}
+                    {STANDARD_THEORY_SLOTS.map((slot, index) => {
+                      const topPercent = ((slot.startMinutes - START_MINUTES) / TOTAL_MINUTES) * 100;
+                      return (
+                        <div
+                          key={index}
+                          style={{ top: `${topPercent}%` }}
+                          className="absolute left-0 right-0 border-t border-slate-100 dark:border-slate-800/60 pointer-events-none"
+                        />
+                      );
+                    })}
+
+                    {/* Classes on this day */}
+                    <AnimatePresence>
+                      {dayEvents.map((evt, idx) => {
+                        const startMin = Math.max(evt.slot.startMinutes, START_MINUTES);
+                        const endMin = Math.min(evt.slot.endMinutes, END_MINUTES);
+                        const topPercent = ((startMin - START_MINUTES) / TOTAL_MINUTES) * 100;
+                        const heightPercent = ((endMin - startMin) / TOTAL_MINUTES) * 100;
+
+                        const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
+
+                        return (
+                          <motion.div
+                            key={`${evt.section.id}-${evt.slot.day}-${idx}`}
+                            initial={{ opacity: 0, scale: 0.95, y: 4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            style={{
+                              top: `${Math.max(0.5, topPercent)}%`,
+                              height: `${Math.max(8, heightPercent - 0.8)}%`,
+                              left: '3px',
+                              right: '3px'
+                            }}
+                            className={`absolute rounded-lg p-1.5 transition-all text-xs flex flex-col justify-between overflow-hidden shadow-2xs border ${
+                              evt.isConflicted
+                                ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/50'
+                                : `${palette.bg} ${palette.border} ${palette.text}`
+                            }`}
+                          >
+                            {/* Card Content: Compact Google Calendar style */}
+                            <div className="flex items-start justify-between gap-1 leading-tight">
+                              <div className="min-w-0">
+                                <div className="font-bold text-[11px] truncate tracking-tight font-mono">
+                                  {evt.section.courseCode}
+                                </div>
+                                <div className="text-[10px] font-semibold opacity-90 truncate">
+                                  Sec {evt.section.section} · {evt.section.facultyInitial}
+                                </div>
+                              </div>
+
+                              {!isExportView && (
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    onRemoveSection(evt.section.id);
+                                  }}
+                                  className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 opacity-60 hover:opacity-100 transition-opacity p-0.5"
+                                  title="Remove section"
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Bottom Micro Details */}
+                            <div className="flex items-center justify-between text-[9px] font-mono opacity-80 pt-0.5 leading-none">
+                              <span className="truncate">{evt.slot.room}</span>
+                              {evt.isConflicted && (
+                                <span className="font-bold text-rose-600 dark:text-rose-400">
+                                  CLASH
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 3. Summary Footer (Compact metrics row) */}
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-xs">
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Courses</div>
+            <div className="font-bold font-mono text-slate-800 dark:text-slate-200 tabular-nums">
+              {courseCount}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Credits</div>
+            <div className="font-bold font-mono text-slate-800 dark:text-slate-200 tabular-nums">
+              {totalCredits}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Busy Days</div>
+            <div className="font-bold font-mono text-slate-800 dark:text-slate-200 tabular-nums">
+              {activeDays.length}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400 uppercase font-semibold">Conflicts</div>
+            <div
+              className={`font-bold font-mono tabular-nums ${
+                conflicts.length > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+              }`}
+            >
+              {conflicts.length}
+            </div>
+          </div>
         </div>
       </div>
     </div>

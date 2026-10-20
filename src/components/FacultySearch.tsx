@@ -7,6 +7,7 @@ interface FacultySearchProps {
   allSections: SectionItem[];
   selectedSections: SectionItem[];
   onSelectSection: (section: SectionItem, conflicts: ScheduleConflict[]) => void;
+  onDeselectSection?: (sectionId: string) => void;
   onNavigateToCourse: (courseCode: string) => void;
 }
 
@@ -14,6 +15,7 @@ export const FacultySearch: React.FC<FacultySearchProps> = ({
   allSections,
   selectedSections,
   onSelectSection,
+  onDeselectSection,
   onNavigateToCourse
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -215,10 +217,14 @@ export const FacultySearch: React.FC<FacultySearchProps> = ({
 
                       <div className="flex items-center gap-2 shrink-0">
                         {isCurrent ? (
-                          <div className="inline-flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400 font-semibold px-3 py-2 rounded-xl bg-orange-100 dark:bg-orange-950/60">
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Added to Routine</span>
-                          </div>
+                          <button
+                            onClick={() => onDeselectSection && onDeselectSection(sec.id)}
+                            className="inline-flex items-center gap-1.5 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-semibold px-3 py-2 rounded-xl shadow-xs transition-colors cursor-pointer"
+                            title="Click to deselect"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Selected</span>
+                          </button>
                         ) : (
                           <button
                             onClick={() => onSelectSection(sec, conflicts)}
