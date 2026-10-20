@@ -292,70 +292,16 @@ export default function App() {
               </div>
 
               {/* Right Side: Fixed/Sticky Timetable (5 cols) */}
-              <div className="lg:col-span-5 sticky top-20 space-y-4">
-                <div className="flex items-center justify-between pb-1">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-orange-600" />
-                      <span>Live Weekly Timetable</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Saturday – Wednesday · Updates instantly as you select sections
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {selectedSections.length > 0 && (
-                      <button
-                        onClick={handleClearAll}
-                        className="text-xs text-slate-400 hover:text-rose-500 font-medium transition-colors p-1"
-                        title="Reset all selected courses and timetable"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setIsExportOpen(true)}
-                      disabled={selectedSections.length === 0}
-                      className="px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Weekly Timetable Component with empty state */}
-                <div className="w-full">
-                  <WeeklyCalendar
-                    selectedSections={selectedSections}
-                    allCourseCodes={allCourseCodes}
-                    conflicts={currentActiveConflicts}
-                    onRemoveSection={handleRemoveSectionFromCalendar}
-                    onSelectCourse={code => handleNavigateToCourse(code)}
-                  />
-                </div>
-
-                {/* Quick Info Footer under Timetable */}
-                {selectedSections.length > 0 && (
-                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between text-xs">
-                    <div className="space-y-0.5">
-                      <div className="font-bold text-slate-800 dark:text-slate-200">
-                        {stats.totalCredits} Credits Planned
-                      </div>
-                      <div className="text-slate-400 font-mono text-[11px]">
-                        {stats.theoryCount} Theory · {stats.labCount} Lab · {stats.busyDays.length} Active Days
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setCurrentTab('stats')}
-                      className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline"
-                    >
-                      View Full Analysis →
-                    </button>
-                  </div>
-                )}
+              <div className="lg:col-span-5 sticky top-20 max-h-[calc(100vh-5.5rem)] flex flex-col">
+                <WeeklyCalendar
+                  selectedSections={selectedSections}
+                  allCourseCodes={allCourseCodes}
+                  conflicts={currentActiveConflicts}
+                  onRemoveSection={handleRemoveSectionFromCalendar}
+                  onClearRoutine={handleClearAll}
+                  onOpenExport={() => setIsExportOpen(true)}
+                  onSelectCourse={code => handleNavigateToCourse(code)}
+                />
               </div>
             </div>
           </div>
@@ -450,22 +396,26 @@ export default function App() {
         onResetOfficial={() => setAllSections(typedInitialData)}
       />
 
-      {/* Minimal clean footer */}
+      {/* Minimal clean footer with developer credits */}
       <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 mt-12 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-slate-800 dark:text-slate-200">
               UIU Fall 2026 Routine Planner
             </span>
             <span>·</span>
             <span>United International University</span>
+            <span>·</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">
+              Developed by <strong className="font-bold text-orange-600 dark:text-orange-400">Arman Kabir</strong> (ID: <strong className="font-mono font-semibold text-slate-900 dark:text-white">0112230478</strong>)
+            </span>
           </div>
           <div className="flex items-center gap-3">
-            <span>Pre-Registration Planning Tool</span>
+            <span>Fall 2026 Pre-Registration</span>
             <span>·</span>
             <button
               onClick={() => setIsUploadOpen(true)}
-              className="hover:underline text-orange-600 dark:text-orange-400"
+              className="hover:underline text-orange-600 dark:text-orange-400 cursor-pointer"
             >
               Update Routine PDF
             </button>

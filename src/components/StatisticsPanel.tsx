@@ -234,9 +234,9 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             <button
               onClick={onOpenExport}
               disabled={selectedSections.length === 0}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-xs transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-xs transition-all cursor-pointer"
             >
-              Export Planned Routine
+              Export as PDF
             </button>
           </div>
         </div>

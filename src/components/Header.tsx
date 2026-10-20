@@ -120,10 +120,10 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={onOpenExport}
-            className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-orange-600 hover:bg-orange-700 active:scale-98 text-white transition-all shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+            className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-orange-600 hover:bg-orange-700 active:scale-98 text-white transition-all shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export Routine</span>
+            <span>Export PDF</span>
           </button>
         </div>
       </div>

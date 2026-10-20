@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { SectionItem } from '../types/routine';
 import { calculateStatistics, DAYS_OF_WEEK } from '../utils/routineUtils';
-import { Download, Printer, X, FileText, Image as ImageIcon, CheckCircle, Loader2 } from 'lucide-react';
+import { Download, X, FileText, Loader2, CheckCircle2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -18,10 +18,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   selectedSections,
   allCourseCodes
 }) => {
-  const [studentName, setStudentName] = useState('');
-  const [studentId, setStudentId] = useState('');
+  const [studentName, setStudentName] = useState('Arman Kabir');
+  const [studentId, setStudentId] = useState('0112230478');
   const [program, setProgram] = useState('BSCSE');
-  const [isExporting, setIsExporting] = useState<'pdf' | 'png' | 'print' | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
@@ -30,7 +31,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   const handleExportPDF = async () => {
     if (!printAreaRef.current) return;
-    setIsExporting('pdf');
+    setIsExporting(true);
+    setExportSuccess(false);
     try {
       const element = printAreaRef.current;
       const canvas = await html2canvas(element, {
@@ -51,47 +53,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const ratio = Math.min((pdfWidth - 40) / imgWidth, (pdfHeight - 40) / imgHeight);
       const imgX = (pdfWidth - imgWidth * ratio) / 2;
       const imgY = 20;
 
       pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      const filename = `UIU_Fall_2026_Routine_${studentId || 'Planned'}.pdf`;
+      const filename = `UIU_Fall_2026_Routine_${studentId || 'Arman_Kabir'}.pdf`;
       pdf.save(filename);
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 4000);
     } catch (err) {
       console.error('Error generating PDF:', err);
     } finally {
-      setIsExporting(null);
+      setIsExporting(false);
     }
-  };
-
-  const handleExportPNG = async () => {
-    if (!printAreaRef.current) return;
-    setIsExporting('png');
-    try {
-      const element = printAreaRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
-      const link = document.createElement('a');
-      link.download = `UIU_Fall_2026_Routine_${studentId || 'Planned'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch (err) {
-      console.error('Error generating PNG:', err);
-    } finally {
-      setIsExporting(null);
-    }
-  };
-
-  const handlePrint = () => {
-    setIsExporting('print');
-    window.print();
-    setIsExporting(null);
   };
 
   return (
@@ -101,11 +76,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Download className="w-5 h-5 text-orange-600" />
-              <span>Export Planned Routine</span>
+              <FileText className="w-5 h-5 text-orange-600" />
+              <span>Export Routine as PDF</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Generate a clean, high-resolution timetable sheet for Fall 2026 registration
+              Official United International University Fall 2026 pre-registration schedule sheet
             </p>
           </div>
           <button
@@ -120,31 +95,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-              Student Name (Optional)
+              Student Name
             </label>
             <input
               type="text"
               value={studentName}
               onChange={e => setStudentName(e.target.value)}
-              placeholder="e.g. John Doe"
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              placeholder="e.g. Arman Kabir"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
             />
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-              Student ID (Optional)
+              Student ID
             </label>
             <input
               type="text"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
-              placeholder="e.g. 011 231 000"
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              placeholder="e.g. 0112230478"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
             />
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-              Department
+              Department / Program
             </label>
             <select
               value={program}
@@ -157,40 +132,45 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         </div>
 
-        {/* Quick Export Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Dedicated Single Export Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-900/60">
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-orange-950 dark:text-orange-200">
+              Ready to Download Routine
+            </div>
+            <div className="text-[11px] text-orange-700 dark:text-orange-300">
+              Includes {selectedSections.length} enrolled courses, {stats.totalCredits} credits, faculty info, and complete weekly timetable.
+            </div>
+          </div>
+
           <button
             onClick={handleExportPDF}
-            disabled={isExporting !== null}
-            className="p-4 rounded-2xl border border-orange-200 dark:border-orange-900/60 bg-orange-50/50 dark:bg-orange-950/20 hover:bg-orange-100/60 dark:hover:bg-orange-950/40 transition-all flex items-center justify-center gap-2 font-bold text-xs text-orange-700 dark:text-orange-300"
+            disabled={isExporting}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-            <span>Export as PDF Document</span>
-          </button>
-
-          <button
-            onClick={handleExportPNG}
-            disabled={isExporting !== null}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2 font-bold text-xs text-slate-800 dark:text-slate-200"
-          >
-            {isExporting === 'png' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-            <span>Export as PNG Image</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            disabled={isExporting !== null}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2 font-bold text-xs text-slate-800 dark:text-slate-200"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Timetable Sheet</span>
+            {isExporting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Generating PDF...</span>
+              </>
+            ) : exportSuccess ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Downloaded Successfully!</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Export as PDF</span>
+              </>
+            )}
           </button>
         </div>
 
-        {/* Printable Canvas Section */}
+        {/* Printable Canvas Section Preview */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 overflow-x-auto bg-slate-100 dark:bg-slate-950">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Document Preview
+            PDF Document Preview
           </div>
 
           <div
@@ -213,9 +193,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </div>
 
               <div className="text-right text-[11px] font-mono">
-                {studentName && <div className="font-bold text-slate-900">{studentName}</div>}
-                {studentId && <div>ID: {studentId}</div>}
-                <div className="text-slate-500">Generated: Fall 2026</div>
+                <div className="font-bold text-slate-900">{studentName || 'Arman Kabir'}</div>
+                <div>ID: {studentId || '0112230478'}</div>
+                <div className="text-slate-500">Trimester: Fall 2026</div>
               </div>
             </div>
 
@@ -238,18 +218,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {selectedSections.map(s => (
-                    <tr key={s.id}>
-                      <td className="py-2 px-2.5 font-bold font-mono">{s.courseCode}</td>
-                      <td className="py-2 px-2.5">{s.courseTitle}</td>
-                      <td className="py-2 px-2.5 font-bold">{s.section}</td>
-                      <td className="py-2 px-2.5">{s.facultyName} ({s.facultyInitial})</td>
-                      <td className="py-2 px-2.5">{s.day2 ? `${s.day1} & ${s.day2}` : s.day1}</td>
-                      <td className="py-2 px-2.5 font-mono">{s.time1}</td>
-                      <td className="py-2 px-2.5 font-mono">{s.room1}</td>
-                      <td className="py-2 px-2.5 font-bold font-mono text-right">{s.credit}</td>
+                  {selectedSections.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-4 text-center text-slate-400 italic">
+                        No courses enrolled yet. Select sections from planner.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    selectedSections.map(s => (
+                      <tr key={s.id}>
+                        <td className="py-2 px-2.5 font-bold font-mono">{s.courseCode}</td>
+                        <td className="py-2 px-2.5">{s.courseTitle}</td>
+                        <td className="py-2 px-2.5 font-bold">{s.section}</td>
+                        <td className="py-2 px-2.5">{s.facultyName} ({s.facultyInitial})</td>
+                        <td className="py-2 px-2.5">{s.day2 ? `${s.day1} & ${s.day2}` : s.day1}</td>
+                        <td className="py-2 px-2.5 font-mono">{s.time1}</td>
+                        <td className="py-2 px-2.5 font-mono">{s.room1}</td>
+                        <td className="py-2 px-2.5 font-bold font-mono text-right">{s.credit}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-900 font-bold text-slate-900">
@@ -315,7 +303,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             {/* Document Footer */}
             <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
               <div>United International University · Fall 2026 Trimester</div>
-              <div>Designed with UIU Fall 2026 Routine Planner</div>
+              <div>Planned by Arman Kabir (ID: 0112230478)</div>
             </div>
           </div>
         </div>
