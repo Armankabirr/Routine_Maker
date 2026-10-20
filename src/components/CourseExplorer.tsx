@@ -100,8 +100,8 @@ export const CourseExplorer: React.FC<CourseExplorerProps> = ({
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="🔍 Search by Course Code or Course Name (e.g. CSE 4157, Machine Learning)..."
-          className="w-full pl-11 pr-10 py-3.5 text-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-orange-500 dark:focus:border-orange-500 shadow-xs transition-all"
+          placeholder="Search by code or title (e.g. CSE 4157, Machine Learning)..."
+          className="w-full pl-11 pr-10 py-3 sm:py-3.5 text-base sm:text-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-orange-500 dark:focus:border-orange-500 shadow-xs transition-all"
         />
         {searchQuery && (
           <button
@@ -113,15 +113,15 @@ export const CourseExplorer: React.FC<CourseExplorerProps> = ({
         )}
       </div>
 
-      {/* Modern Filter Chips */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Modern Filter Chips (Horizontally Scrollable on Mobile) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1 sm:flex-wrap">
         {filterChips.map(chip => {
           const isActive = activeFilter === chip.id;
           return (
             <button
               key={chip.id}
               onClick={() => setActiveFilter(chip.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+              className={`px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer shrink-0 ${
                 isActive
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'

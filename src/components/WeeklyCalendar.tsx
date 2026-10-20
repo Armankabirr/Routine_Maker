@@ -35,7 +35,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   isExportView = false
 }) => {
   const [highlightConflictsOnly, setHighlightConflictsOnly] = useState(false);
-  const [activeMobileDay, setActiveMobileDay] = useState<'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday'>('Saturday');
+  const [activeMobileDay, setActiveMobileDay] = useState<'All' | 'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday'>('Saturday');
 
   // Stats
   const totalCredits = selectedSections.reduce((acc, s) => acc + s.credit, 0);
@@ -166,8 +166,19 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         ) : (
           <>
             {/* Mobile View: Day Tabs & Vertical List (sm:hidden) */}
-            <div className="block sm:hidden p-2.5">
-              <div className="flex items-center justify-between gap-1 pb-2">
+            <div className="block sm:hidden p-3 space-y-2.5">
+              {/* Day Selection Tabs with All option */}
+              <div className="flex items-center justify-between gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/50">
+                <button
+                  onClick={() => setActiveMobileDay('All')}
+                  className={`flex-1 py-1.5 px-0.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer ${
+                    activeMobileDay === 'All'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  All
+                </button>
                 {DAYS_OF_WEEK.map(day => {
                   const count = scheduledEvents.filter(e => e.slot.day === day).length;
                   const isActive = activeMobileDay === day;
@@ -176,65 +187,150 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     <button
                       key={day}
                       onClick={() => setActiveMobileDay(day)}
-                      className={`flex-1 py-1 px-0.5 rounded-lg text-[10px] font-semibold text-center transition-all ${
+                      className={`flex-1 py-1.5 px-0.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       <div>{day.slice(0, 3)}</div>
-                      <div className="text-[9px] opacity-75">({count})</div>
+                      <div className="text-[10px] font-mono opacity-80">({count})</div>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="space-y-1.5 min-h-[140px]">
-                {scheduledEvents.filter(e => e.slot.day === activeMobileDay).length === 0 ? (
-                  <div className="py-6 text-center text-xs text-slate-400 italic">
-                    No classes on {activeMobileDay}
-                  </div>
-                ) : (
-                  scheduledEvents
-                    .filter(e => e.slot.day === activeMobileDay)
-                    .sort((a, b) => a.slot.startMinutes - b.slot.startMinutes)
-                    .map((evt, idx) => {
-                      const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
+              {/* Event Cards Listing */}
+              <div className="space-y-2 min-h-[160px]">
+                {activeMobileDay === 'All' ? (
+                  // All Days View
+                  scheduledEvents.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-slate-400 italic">
+                      No classes selected yet.
+                    </div>
+                  ) : (
+                    DAYS_OF_WEEK.map(day => {
+                      const dayEvts = scheduledEvents
+                        .filter(e => e.slot.day === day)
+                        .sort((a, b) => a.slot.startMinutes - b.slot.startMinutes);
+
+                      if (dayEvts.length === 0) return null;
 
                       return (
-                        <div
-                          key={`${evt.section.id}-${idx}`}
-                          className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 ${
-                            evt.isConflicted
-                              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-900 dark:text-rose-200'
-                              : `${palette.bg} ${palette.border} ${palette.text}`
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold font-mono text-[11px]">{evt.section.courseCode}</span>
-                              <span className="font-semibold text-[9px] px-1 py-0.2 rounded-xs bg-slate-900/10 dark:bg-white/10">
-                                Sec {evt.section.section}
-                              </span>
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                              <span>{evt.slot.time}</span>
-                              <span>·</span>
-                              <span>{evt.slot.room}</span>
-                              <span>·</span>
-                              <span>{evt.section.facultyInitial}</span>
-                            </div>
+                        <div key={day} className="space-y-1.5 pt-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 px-1 flex items-center justify-between">
+                            <span>{day}</span>
+                            <span className="text-slate-400 font-normal lowercase">{dayEvts.length} class{dayEvts.length > 1 ? 'es' : ''}</span>
                           </div>
+                          {dayEvts.map((evt, idx) => {
+                            const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
 
-                          <button
-                            onClick={() => onRemoveSection(evt.section.id)}
-                            className="p-1 text-slate-400 hover:text-rose-500 rounded"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                            return (
+                              <div
+                                key={`${evt.section.id}-${day}-${idx}`}
+                                className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-2xs ${
+                                  evt.isConflicted
+                                    ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-900 dark:text-rose-200'
+                                    : `${palette.bg} ${palette.border} ${palette.text}`
+                                }`}
+                              >
+                                <div className="min-w-0 flex-1 space-y-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-extrabold font-mono text-xs">{evt.section.courseCode}</span>
+                                    <span className="font-bold text-[10px] px-1.5 py-0.2 rounded-md bg-slate-900/10 dark:bg-white/10">
+                                      Sec {evt.section.section}
+                                    </span>
+                                    {evt.isConflicted && (
+                                      <span className="text-[10px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-900/80 px-1 rounded">
+                                        Clash
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] font-medium truncate opacity-90">
+                                    {evt.section.courseTitle}
+                                  </div>
+                                  <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1.5 flex-wrap pt-0.5">
+                                    <span>{evt.slot.time}</span>
+                                    <span>·</span>
+                                    <span className="font-bold">{evt.slot.room}</span>
+                                    <span>·</span>
+                                    <span>{evt.section.facultyInitial}</span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() => onRemoveSection(evt.section.id)}
+                                  className="p-2 text-slate-400 hover:text-rose-500 active:scale-95 rounded-lg hover:bg-black/5 transition-all shrink-0 cursor-pointer"
+                                  title="Remove section"
+                                  aria-label="Remove section"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })
+                  )
+                ) : (
+                  // Specific Day View
+                  scheduledEvents.filter(e => e.slot.day === activeMobileDay).length === 0 ? (
+                    <div className="py-8 text-center text-xs text-slate-400 italic">
+                      No classes scheduled on {activeMobileDay}
+                    </div>
+                  ) : (
+                    scheduledEvents
+                      .filter(e => e.slot.day === activeMobileDay)
+                      .sort((a, b) => a.slot.startMinutes - b.slot.startMinutes)
+                      .map((evt, idx) => {
+                        const palette = getCoursePalette(evt.section.courseCode, allCourseCodes);
+
+                        return (
+                          <div
+                            key={`${evt.section.id}-${idx}`}
+                            className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-2xs ${
+                              evt.isConflicted
+                                ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-900 dark:text-rose-200'
+                                : `${palette.bg} ${palette.border} ${palette.text}`
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-extrabold font-mono text-xs">{evt.section.courseCode}</span>
+                                <span className="font-bold text-[10px] px-1.5 py-0.2 rounded-md bg-slate-900/10 dark:bg-white/10">
+                                  Sec {evt.section.section}
+                                </span>
+                                {evt.isConflicted && (
+                                  <span className="text-[10px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-900/80 px-1 rounded">
+                                    Clash
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] font-medium truncate opacity-90">
+                                {evt.section.courseTitle}
+                              </div>
+                              <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1.5 flex-wrap pt-0.5">
+                                <span>{evt.slot.time}</span>
+                                <span>·</span>
+                                <span className="font-bold">{evt.slot.room}</span>
+                                <span>·</span>
+                                <span>{evt.section.facultyInitial}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => onRemoveSection(evt.section.id)}
+                              className="p-2 text-slate-400 hover:text-rose-500 active:scale-95 rounded-lg hover:bg-black/5 transition-all shrink-0 cursor-pointer"
+                              title="Remove section"
+                              aria-label="Remove section"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })
+                  )
                 )}
               </div>
             </div>

@@ -91,11 +91,12 @@ export const FacultySearch: React.FC<FacultySearchProps> = ({
       </div>
 
       {/* 2-Column Split: Faculty List & Faculty Offerings */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[400px]">
         {/* Left column: Faculty list */}
-        <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 max-h-[550px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-          <div className="p-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/80 sticky top-0 z-10">
-            Faculties ({filteredFaculties.length})
+        <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 max-h-[220px] sm:max-h-[300px] lg:max-h-[580px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+          <div className="p-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/80 sticky top-0 z-10 flex items-center justify-between">
+            <span>Faculties ({filteredFaculties.length})</span>
+            <span className="text-[10px] text-slate-400 lg:hidden">Tap to view</span>
           </div>
 
           {filteredFaculties.length === 0 ? (

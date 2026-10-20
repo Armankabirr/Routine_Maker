@@ -53,41 +53,41 @@ export const PlanningProgressBar: React.FC<PlanningProgressBarProps> = ({
         </div>
 
         {/* Right: Metrics Pills */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-3">
           {/* Courses Added */}
-          <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex items-center gap-2.5">
-            <BookOpen className="w-4 h-4 text-slate-400" />
+          <div className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-center sm:text-left">
+            <BookOpen className="w-4 h-4 text-slate-400 mx-auto sm:mx-0 shrink-0" />
             <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                Courses Added
+              <div className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">
+                Courses
               </div>
-              <div className="text-sm font-bold text-slate-900 dark:text-white font-mono tabular-nums">
+              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono tabular-nums">
                 {coursesAddedCount}
               </div>
             </div>
           </div>
 
           {/* Sections Selected */}
-          <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-orange-500" />
+          <div className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-center sm:text-left">
+            <Clock className="w-4 h-4 text-orange-500 mx-auto sm:mx-0 shrink-0" />
             <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                Sections Picked
+              <div className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">
+                Sections
               </div>
-              <div className="text-sm font-bold text-slate-900 dark:text-white font-mono tabular-nums">
-                {sectionsSelectedCount} / {coursesAddedCount}
+              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono tabular-nums">
+                {sectionsSelectedCount}/{coursesAddedCount}
               </div>
             </div>
           </div>
 
           {/* Total Credits */}
-          <div className="px-3.5 py-2 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-900/60 flex items-center gap-2.5">
-            <div>
-              <div className="text-[10px] text-orange-700 dark:text-orange-300 font-semibold uppercase tracking-wider">
-                Planned Credits
+          <div className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-900/60 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-center sm:text-left">
+            <div className="w-full">
+              <div className="text-[9px] sm:text-[10px] text-orange-700 dark:text-orange-300 font-semibold uppercase tracking-wider truncate">
+                Credits
               </div>
-              <div className="text-sm font-bold text-orange-900 dark:text-orange-200 font-mono tabular-nums">
-                {totalCredits} <span className="text-[11px] font-normal text-slate-400">/ 15 Cr</span>
+              <div className="text-xs sm:text-sm font-bold text-orange-900 dark:text-orange-200 font-mono tabular-nums">
+                {totalCredits}<span className="text-[10px] font-normal text-slate-400">/15</span>
               </div>
             </div>
           </div>

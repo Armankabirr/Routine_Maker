@@ -244,10 +244,11 @@ export default function App() {
         onOpenUpload={() => setIsUploadOpen(true)}
         selectedCount={selectedSections.length}
         totalCredits={stats.totalCredits}
+        conflictCount={currentActiveConflicts.length}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Main Container with mobile bottom safe padding */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 pb-28 md:pb-8">
         {/* Planner Tab (Redesigned 2-Column Clean Layout) */}
         {currentTab === 'planner' && (
           <div className="space-y-6 animate-in fade-in duration-200">
@@ -259,9 +260,9 @@ export default function App() {
             />
 
             {/* Modern Two-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
               {/* Left Side: Course Selection & Explorer (7 cols) */}
-              <div className="lg:col-span-7 space-y-8">
+              <div className="lg:col-span-7 space-y-6 sm:space-y-8">
                 {/* 1. Selected Courses Panel (Accordion) */}
                 <div ref={selectedPanelRef} className="scroll-mt-24">
                   <SelectedCoursesAccordion
@@ -292,7 +293,7 @@ export default function App() {
               </div>
 
               {/* Right Side: Fixed/Sticky Timetable (5 cols) */}
-              <div className="lg:col-span-5 sticky top-20 max-h-[calc(100vh-5.5rem)] flex flex-col">
+              <div id="timetable-preview-panel" className="lg:col-span-5 lg:sticky lg:top-20 max-h-[calc(100vh-5.5rem)] flex flex-col">
                 <WeeklyCalendar
                   selectedSections={selectedSections}
                   allCourseCodes={allCourseCodes}
@@ -304,6 +305,29 @@ export default function App() {
                 />
               </div>
             </div>
+
+            {/* Mobile Floating Quick Routine Action Pill */}
+            {selectedSections.length > 0 && (
+              <div className="md:hidden fixed bottom-14 left-3 right-3 z-30 flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white shadow-xl backdrop-blur-md border border-slate-800 dark:border-slate-700 animate-in slide-in-from-bottom duration-200">
+                <div className="flex items-center gap-2 text-xs font-semibold min-w-0 truncate">
+                  <Calendar className="w-4 h-4 text-orange-400 shrink-0" />
+                  <span className="truncate">
+                    {selectedSections.length} Course{selectedSections.length > 1 ? 's' : ''} ({stats.totalCredits} Cr)
+                  </span>
+                  {currentActiveConflicts.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-bold">
+                      {currentActiveConflicts.length} Clash
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setCurrentTab('calendar')}
+                  className="px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 active:scale-95 text-white text-xs font-bold shadow-xs whitespace-nowrap cursor-pointer shrink-0"
+                >
+                  View Routine →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
