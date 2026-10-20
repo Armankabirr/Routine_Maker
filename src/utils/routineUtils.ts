@@ -138,6 +138,31 @@ export function checkConflicts(
 }
 
 /**
+ * Helper to determine if course is Core or Elective
+ */
+export function isCoreCourse(courseCode: string): boolean {
+  const codeNum = parseInt(courseCode.replace(/[^0-9]/g, ''), 10);
+  // Non-CSE general university core courses
+  if (
+    courseCode.startsWith('ACT') ||
+    courseCode.startsWith('BDS') ||
+    courseCode.startsWith('BIO') ||
+    courseCode.startsWith('ENG') ||
+    courseCode.startsWith('MATH') ||
+    courseCode.startsWith('PHY') ||
+    courseCode.startsWith('SOC') ||
+    courseCode.startsWith('GED')
+  ) {
+    return true;
+  }
+  // CSE / DS lower level foundation courses are Core (<4000)
+  if (!isNaN(codeNum) && codeNum < 4000) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Group raw sections by course code
  */
 export function groupSectionsByCourse(sections: SectionItem[]): CourseGroup[] {

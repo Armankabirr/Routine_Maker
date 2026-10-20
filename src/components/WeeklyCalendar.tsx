@@ -81,6 +81,23 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       {/* Main Timetable Body with proportional time slots */}
       <div className="relative min-w-[700px] sm:min-w-0">
         <div className="grid grid-cols-[70px_repeat(5,1fr)] relative min-h-[640px]">
+          {/* Friendly Overlay if no sections selected yet */}
+          {selectedSections.length === 0 && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs text-center space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-orange-100/80 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center text-3xl shadow-sm">
+                📚
+              </div>
+              <div className="max-w-xs space-y-1">
+                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                  Start building your Fall 2026 routine
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Search or browse courses on the left and add them to your planner. Selected sections will appear here in real-time.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Time Gutter Column */}
           <div className="flex flex-col justify-between py-2 border-r border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 select-none">
             {STANDARD_THEORY_SLOTS.map(slot => (
