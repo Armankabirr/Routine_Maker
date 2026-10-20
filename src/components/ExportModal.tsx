@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { SectionItem } from '../types/routine';
 import { calculateStatistics, DAYS_OF_WEEK } from '../utils/routineUtils';
 import { Download, X, FileText, Loader2, CheckCircle2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -16,50 +16,280 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
   onClose,
   selectedSections,
-  allCourseCodes
+  allCourseCodes: _allCourseCodes
 }) => {
   const [studentName, setStudentName] = useState('Arman Kabir');
   const [studentId, setStudentId] = useState('0112230478');
   const [program, setProgram] = useState('BSCSE');
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
-  const printAreaRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
 
   const stats = calculateStatistics(selectedSections);
 
-  const handleExportPDF = async () => {
-    if (!printAreaRef.current) return;
+  const handleExportPDF = () => {
     setIsExporting(true);
     setExportSuccess(false);
-    try {
-      const element = printAreaRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
+    try {
+      const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
         format: 'a4'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min((pdfWidth - 40) / imgWidth, (pdfHeight - 40) / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 20;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 36;
+      const usableWidth = pageWidth - margin * 2;
 
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      const filename = `UIU_Fall_2026_Routine_${studentId || 'Arman_Kabir'}.pdf`;
-      pdf.save(filename);
+      // Top colored accent bars
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, pageWidth, 6, 'F');
+      doc.setFillColor(234, 88, 12); // orange-600
+      doc.rect(0, 6, pageWidth, 3, 'F');
+
+      // Header Branding
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(15, 23, 42);
+      doc.text('UNITED INTERNATIONAL UNIVERSITY', margin, 36);
+
+      doc.setFontSize(10);
+      doc.setTextColor(234, 88, 12);
+      doc.text('FALL 2026 SEMESTER ROUTINE & PRE-REGISTRATION WORKSHEET', margin, 50);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      const programLabel =
+        program === 'BSDS'
+          ? 'Dept. of Data Science (BSDS) · Official Student Plan'
+          : 'Dept. of Computer Science & Engineering (BSCSE) · Official Student Plan';
+      doc.text(programLabel, margin, 64);
+
+      // Student Meta Box (Top Right)
+      const boxWidth = 230;
+      const boxHeight = 50;
+      const boxX = pageWidth - margin - boxWidth;
+      const boxY = 20;
+
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 4, 4, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`Student: ${studentName || 'Arman Kabir'}`, boxX + 10, boxY + 16);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`ID: ${studentId || '0112230478'}`, boxX + 10, boxY + 30);
+      doc.text(
+        `Trimester: Fall 2026 · Planned Credits: ${stats.totalCredits}`,
+        boxX + 10,
+        boxY + 43
+      );
+
+      // Section 1: Enrolled Courses Table
+      const courseRows =
+        selectedSections.length === 0
+          ? [
+              [
+                {
+                  content: 'No courses enrolled yet. Select sections in the planner.',
+                  colSpan: 8,
+                  styles: {
+                    halign: 'center' as const,
+                    fontStyle: 'italic' as const,
+                    textColor: [148, 163, 184] as [number, number, number]
+                  }
+                }
+              ]
+            ]
+          : selectedSections.map(s => [
+              s.courseCode,
+              s.courseTitle,
+              s.section,
+              `${s.facultyName} (${s.facultyInitial})`,
+              s.day2 ? `${s.day1} & ${s.day2}` : s.day1,
+              s.time1,
+              s.room1,
+              s.credit.toString()
+            ]);
+
+      autoTable(doc, {
+        startY: 78,
+        margin: { left: margin, right: margin },
+        head: [
+          [
+            'Course Code',
+            'Course Title',
+            'Sec',
+            'Faculty',
+            'Days',
+            'Time',
+            'Room',
+            'Cr'
+          ]
+        ],
+        body: courseRows,
+        foot: [
+          [
+            {
+              content: 'Total Planned Credits:',
+              colSpan: 7,
+              styles: {
+                halign: 'right' as const,
+                fontStyle: 'bold' as const,
+                textColor: [15, 23, 42] as [number, number, number]
+              }
+            },
+            {
+              content: stats.totalCredits.toString(),
+              styles: {
+                halign: 'center' as const,
+                fontStyle: 'bold' as const,
+                textColor: [234, 88, 12] as [number, number, number]
+              }
+            }
+          ]
+        ],
+        theme: 'grid',
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: 'bold' as const,
+          halign: 'left' as const,
+          cellPadding: 4
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          textColor: [30, 41, 59],
+          cellPadding: 4
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        footStyles: {
+          fillColor: [241, 245, 249],
+          fontSize: 8,
+          cellPadding: 4
+        },
+        columnStyles: {
+          0: { cellWidth: 70, fontStyle: 'bold' },
+          2: { cellWidth: 32, halign: 'center', fontStyle: 'bold' },
+          4: { cellWidth: 72 },
+          5: { cellWidth: 110 },
+          6: { cellWidth: 70 },
+          7: { cellWidth: 35, halign: 'center', fontStyle: 'bold' }
+        }
+      });
+
+      // Section 2: Weekly Schedule Timetable Grid
+      const finalYCourseTable = (doc as any).lastAutoTable?.finalY || 180;
+      const timetableStartY = Math.max(finalYCourseTable + 14, 185);
+
+      // Check if we need a new page for timetable grid
+      if (timetableStartY > pageHeight - 140) {
+        doc.addPage();
+      }
+
+      const gridStartY =
+        timetableStartY > pageHeight - 140 ? 30 : timetableStartY;
+
+      // Section Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('WEEKLY CLASS ROUTINE GRID', margin, gridStartY);
+
+      // Prepare day columns
+      const dayColumns = DAYS_OF_WEEK.map(day => {
+        const events = selectedSections
+          .flatMap(s =>
+            s.schedules
+              .filter(sl => sl.day === day)
+              .map(sl => ({ section: s, slot: sl }))
+          )
+          .sort((a, b) => a.slot.startMinutes - b.slot.startMinutes);
+
+        if (events.length === 0) {
+          return 'No Class Scheduled';
+        }
+
+        return events
+          .map(
+            evt =>
+              `${evt.section.courseCode} (Sec ${evt.section.section})\n${evt.slot.time}\nRoom ${evt.slot.room} · ${evt.section.facultyInitial}`
+          )
+          .join('\n\n');
+      });
+
+      autoTable(doc, {
+        startY: gridStartY + 6,
+        margin: { left: margin, right: margin },
+        head: [['SATURDAY', 'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY']],
+        body: [dayColumns],
+        theme: 'grid',
+        headStyles: {
+          fillColor: [30, 41, 59],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'center',
+          cellPadding: 4
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          textColor: [30, 41, 59],
+          cellPadding: 6,
+          valign: 'top',
+          cellWidth: usableWidth / 5
+        }
+      });
+
+      // Add Footer on all pages
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(148, 163, 184);
+
+        // Footer line
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, pageHeight - 18, pageWidth - margin, pageHeight - 18);
+
+        // Footer text
+        doc.text(
+          'United International University · Fall 2026 Trimester',
+          margin,
+          pageHeight - 8
+        );
+        doc.text(
+          `Planned by ${studentName || 'Arman Kabir'} (ID: ${studentId || '0112230478'})`,
+          pageWidth / 2,
+          pageHeight - 8,
+          { align: 'center' }
+        );
+        doc.text(
+          `Page ${i} of ${totalPages}`,
+          pageWidth - margin,
+          pageHeight - 8,
+          { align: 'right' }
+        );
+      }
+
+      // Download file
+      const sanitizedId = (studentId || '0112230478').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `UIU_Fall_2026_Routine_${sanitizedId}.pdf`;
+      doc.save(filename);
+
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 4000);
     } catch (err) {
@@ -80,7 +310,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <span>Export Routine as PDF</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Official United International University Fall 2026 pre-registration schedule sheet
+              Official United International University Fall 2026 pre-registration schedule worksheet
             </p>
           </div>
           <button
@@ -102,7 +332,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               value={studentName}
               onChange={e => setStudentName(e.target.value)}
               placeholder="e.g. Arman Kabir"
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:outline-hidden focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div>
@@ -114,7 +344,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               placeholder="e.g. 0112230478"
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-hidden focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div>
@@ -124,9 +354,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <select
               value={program}
               onChange={e => setProgram(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-orange-500"
             >
-              <option value="BSCSE">Dept. of Computer Science & Engineering (BSCSE)</option>
+              <option value="BSCSE">Dept. of Computer Science &amp; Engineering (BSCSE)</option>
               <option value="BSDS">Dept. of Data Science (BSDS)</option>
             </select>
           </div>
@@ -167,14 +397,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </button>
         </div>
 
-        {/* Printable Canvas Section Preview */}
+        {/* Routine Document Preview */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 overflow-x-auto bg-slate-100 dark:bg-slate-950">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
             PDF Document Preview
           </div>
 
           <div
-            ref={printAreaRef}
             className="bg-white text-slate-900 p-8 rounded-xl shadow-xs w-[1000px] mx-auto text-xs space-y-6"
             style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
           >
