@@ -1,0 +1,6 @@
+{
+  "name": "UIU Fall 2026 Routine Planner",
+  "description": "Interactive routine and section planner for United International University (UIU) Fall 2026 trimester students with clash detection, faculty search, credit tracking, and export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
